@@ -552,7 +552,7 @@ static int scan_init(void)
 
 	struct bt_scan_init_param param = {
 		.scan_param = NULL,
-		.conn_param = BT_LE_CONN_PARAM(0x10, 0x10, 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+		.conn_param = BT_LE_CONN_PARAM(0x10 * 2, 0x10 * 2, 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
 		.connect_if_match = 1};
 
 	bt_scan_init(&param);
@@ -741,12 +741,12 @@ int main(void)
 		.min_procedure_interval = realtime_rd ? 5 : 10,
 		.max_procedure_interval = realtime_rd ? 5 : 10,
 		.max_procedure_count = 0,
-		.min_subevent_len = 16000,
-		.max_subevent_len = 16000,
-		.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1,
+		.min_subevent_len = 24000,
+		.max_subevent_len = 24000,
+		.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B2,
 		.phy = BT_LE_CS_PROCEDURE_PHY_2M,
 		.tx_power_delta = 0x80,
-		.preferred_peer_antenna = BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1,
+		.preferred_peer_antenna = BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1 | BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_2,
 		.snr_control_initiator = BT_LE_CS_SNR_CONTROL_NOT_USED,
 		.snr_control_reflector = BT_LE_CS_SNR_CONTROL_NOT_USED,
 	};
