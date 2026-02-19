@@ -100,6 +100,7 @@ static nrfx_timer_t timer =
 	NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(RADIO_TEST_TIMER_INSTANCE));
 
 static bool sweep_processing;
+static bool periodic_tones_txing;
 
 /* Total payload size */
 static uint16_t total_payload_size;
@@ -862,6 +863,45 @@ static void radio_unmodulated_tx_carrier(uint8_t mode, int8_t txpower, uint8_t c
 	radio_start(false, sweep_processing);
 }
 
+static void radio_periodic_tones_start(int8_t txpower, uint8_t channel)
+{
+	printk("Radio periodic tones start with txpower: %d and channel: %d\n", txpower, channel);
+	radio_disable();
+
+	radio_mode_set(NRF_RADIO, NRF_RADIO_MODE_BLE_1MBIT);
+	radio_power_set(NRF_RADIO_MODE_BLE_1MBIT, channel, txpower);
+
+	radio_channel_set(NRF_RADIO_MODE_BLE_1MBIT, channel);
+
+	nrfx_timer_extended_compare(&timer,
+		NRF_TIMER_CC_CHANNEL0,
+		nrfx_timer_us_to_ticks(&timer, 100),
+		NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
+		true);
+	nrfx_timer_enable(&timer);
+	periodic_tones_txing = false;
+}
+
+static void radio_periodic_tones_handle(void)
+{
+	uint32_t radio_ramp_us = 41;
+	if (periodic_tones_txing)
+	{
+		// printk("Radio periodic tones end\n");
+		radio_disable();
+		periodic_tones_txing = false;
+		nrfx_timer_compare(&timer, NRF_TIMER_CC_CHANNEL0, nrfx_timer_us_to_ticks(&timer, 200 - radio_ramp_us), true);
+	}
+	else
+	{
+		// printk("Radio periodic tones start\n");
+		radio_start(false, false);
+		nrfx_timer_compare(&timer, NRF_TIMER_CC_CHANNEL0, nrfx_timer_us_to_ticks(&timer, 200 + radio_ramp_us), true);
+		periodic_tones_txing = true;
+	}
+}
+
+
 static void radio_modulated_tx_carrier(uint8_t mode, int8_t txpower, uint8_t channel,
 				       enum transmit_pattern pattern, uint32_t packets_num)
 {
@@ -1055,6 +1095,10 @@ void radio_test_start(const struct radio_test_config *config)
 	}
 
 	switch (config->type) {
+	case TX_PERIODIC_TONES:
+		radio_periodic_tones_start(config->params.periodic_tones.txpower,
+															config->params.periodic_tones.channel);
+		break;
 	case UNMODULATED_TX:
 		radio_unmodulated_tx_carrier(config->mode,
 			config->params.unmodulated_tx.txpower,
@@ -1206,7 +1250,10 @@ static void timer_handler(nrf_timer_event_t event_type, void *context)
 
 			channel_start = config->params.rx_sweep.channel_start;
 			channel_end = config->params.rx_sweep.channel_end;
-		} else {
+		} else if (config->type == TX_PERIODIC_TONES) {
+				radio_periodic_tones_handle();
+		}
+		 else {
 			printk("Unexpected test type: %d\n", config->type);
 			return;
 		}

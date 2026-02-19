@@ -67,6 +67,9 @@ enum radio_test_mode {
 
 	/** Duty-cycled modulated TX carrier. */
 	MODULATED_TX_DUTY_CYCLE,
+
+	/** TX periodic tones. */
+	TX_PERIODIC_TONES,
 };
 
 /**@brief Radio test front-end module (FEM) configuration */
@@ -97,6 +100,14 @@ struct radio_test_config {
 			/** Radio channel. */
 			uint8_t channel;
 		} unmodulated_tx;
+
+		struct {
+			/** Radio output power. */
+			int8_t txpower;
+
+			/** Radio channel. */
+			uint8_t channel;
+		} periodic_tones;
 
 		struct {
 			/** Radio output power. */

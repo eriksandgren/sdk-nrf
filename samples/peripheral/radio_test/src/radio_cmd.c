@@ -316,6 +316,37 @@ static int cmd_tx_modulated_carrier_start(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_tx_periodic_tones_start(const struct shell *shell, size_t argc, char **argv)
+{
+	if (test_in_progress) {
+		radio_test_cancel(test_config.type);
+		test_in_progress = false;
+	}
+
+#if CONFIG_HAS_HW_NRF_RADIO_IEEE802154
+	ieee_channel_check(shell, config.channel_start);
+#endif /* CONFIG_HAS_HW_NRF_RADIO_IEEE802154 */
+
+	if (argc > 1) {
+		shell_error(shell, "%s: bad parameters count.", argv[0]);
+		return -EINVAL;
+	}
+
+	memset(&test_config, 0, sizeof(test_config));
+	test_config.type = TX_PERIODIC_TONES;
+	test_config.mode = config.mode;
+	test_config.params.periodic_tones.txpower = config.txpower;
+	test_config.params.periodic_tones.channel = config.channel_start;
+#if CONFIG_FEM
+	test_config.fem = config.fem;
+#endif /* CONFIG_FEM */
+
+	radio_test_start(&test_config);
+
+	shell_print(shell, "Start the TX periodic tones");
+	return 0;
+}
+
 static int cmd_duty_cycle_set(const struct shell *shell, size_t argc,
 			      char **argv)
 {
@@ -1450,7 +1481,9 @@ SHELL_CMD_REGISTER(output_power,
 		   "If front-end module is attached and automatic power control is enabled, "
 		   "this commands sets the total output power including fem gain",
 		   cmd_output_power_set);
-
+SHELL_CMD_REGISTER(start_tx_periodic_tones, NULL,
+				"Start the TX periodic tones test mode",
+				cmd_tx_periodic_tones_start);
 #if CONFIG_RADIO_TEST_POWER_CONTROL_AUTOMATIC
 SHELL_CMD_REGISTER(total_output_power, NULL,
 		  "Total output power in dBm, including gain of the attached front-end module. "
