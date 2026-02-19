@@ -631,6 +631,7 @@ config BT_CTLR_SDC_CS_MULTIPLE_ANTENNA_SUPPORT
 	bool
 	default y if BT_CTLR_SDC_CS_NUM_ANTENNAS > 1
 	select GPIO
+	select NRFX_GPPI
 	depends on BT_CTLR_CHANNEL_SOUNDING
 	help
 	  Internal helper config. Not intended for use.
