@@ -580,6 +580,43 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.le_cs_subevent_data_available = subevent_result_cb,
 };
 
+static int procedure_interval_get(bool realtime_rd)
+{
+	/* TODO: This needs to be tested with different configurations and realtime_rd values.*/
+	int procedure_interval = 4 + 2 * CONFIG_CS_TONE_ANTENNA_CONFIGURATION_NUM_ANTENNA_PATHS;
+	if (!realtime_rd) {
+		procedure_interval *= 2;
+	}
+
+	return procedure_interval;
+}
+
+static int subevent_len_get(void)
+{
+	/* TODO: This needs to be tested with different configurations. */
+	return 10000 + 6000 * CONFIG_CS_TONE_ANTENNA_CONFIGURATION_NUM_ANTENNA_PATHS;
+}
+
+static int preferred_peer_antenna_get(enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection)
+{
+	int preferred_peer_antenna = BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1;
+
+	switch (tone_antenna_config_selection) {
+		case BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B4:
+			preferred_peer_antenna |= BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_4;
+		case BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B3:
+			preferred_peer_antenna |= BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_3;
+		case BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B2:
+		case BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A2_B2:
+			preferred_peer_antenna |= BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_2;
+			break;
+		default:
+			break;
+	}
+
+	return preferred_peer_antenna;
+}
+
 int main(void)
 {
 	int err;
@@ -739,7 +776,7 @@ int main(void)
 	/* scale factor of conn_interval units to proc_interval units is 1.25/0.625 = 2 */
 	const uint16_t acl_interval_in_proc_interval_units =
 		scan_params.conn_param->interval_max * 2;
-	uint16_t desired_procedure_interval = realtime_rd ? 5 : 10;
+	uint16_t desired_procedure_interval = procedure_interval_get(realtime_rd);
 	uint16_t desired_max_procedure_length =
 		acl_interval_in_proc_interval_units * (desired_procedure_interval - 1);
 
@@ -749,19 +786,46 @@ int main(void)
 		.min_procedure_interval = desired_procedure_interval,
 		.max_procedure_interval = desired_procedure_interval,
 		.max_procedure_count = 0,
-		.min_subevent_len = 16000,
-		.max_subevent_len = 16000,
-		.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1,
+		.min_subevent_len = subevent_len_get(),
+		.max_subevent_len = subevent_len_get(),
+		.tone_antenna_config_selection = CONFIG_CS_TONE_ANTENNA_CONFIGURATION_VALUE,
 		.phy = BT_LE_CS_PROCEDURE_PHY_2M,
 		.tx_power_delta = 0x80,
-		.preferred_peer_antenna = BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1,
+		.preferred_peer_antenna = preferred_peer_antenna_get(CONFIG_CS_TONE_ANTENNA_CONFIGURATION_VALUE),
 		.snr_control_initiator = BT_LE_CS_SNR_CONTROL_NOT_USED,
 		.snr_control_reflector = BT_LE_CS_SNR_CONTROL_NOT_USED,
 	};
 
 	err = bt_le_cs_set_procedure_parameters(connection, &procedure_params);
 	if (err) {
-		LOG_ERR("Failed to set procedure parameters (err %d)", err);
+		LOG_ERR("Failed to set procedure parameters (err %d)\nprocedure_params:\n"
+			"- config_id: %u\n"
+			"- max_procedure_len: %u\n"
+			"- min_procedure_interval: %u\n"
+			"- max_procedure_interval: %u\n"
+			"- max_procedure_count: %u\n"
+			"- min_subevent_len: %u\n"
+			"- max_subevent_len: %u\n"
+			"- tone_antenna_config_selection: %u\n"
+			"- phy: %u\n"
+			"- tx_power_delta: %d\n"
+			"- preferred_peer_antenna: %u\n"
+			"- snr_control_initiator: %u\n"
+			"- snr_control_reflector: %u\n",
+			err,
+			procedure_params.config_id,
+			procedure_params.max_procedure_len,
+			procedure_params.min_procedure_interval,
+			procedure_params.max_procedure_interval,
+			procedure_params.max_procedure_count,
+			procedure_params.min_subevent_len,
+			procedure_params.max_subevent_len,
+			procedure_params.tone_antenna_config_selection,
+			procedure_params.phy,
+			procedure_params.tx_power_delta,
+			procedure_params.preferred_peer_antenna,
+			procedure_params.snr_control_initiator,
+			procedure_params.snr_control_reflector);
 		return 0;
 	}
 
