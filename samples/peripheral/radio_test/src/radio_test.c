@@ -882,20 +882,23 @@ static void radio_periodic_tones_start(int8_t txpower, uint8_t channel)
 	periodic_tones_txing = false;
 }
 
+#define RADIO_TX false
+#define RADIO_RX true
+
 static void radio_periodic_tones_handle(void)
 {
 	uint32_t radio_ramp_us = 41;
 	if (periodic_tones_txing)
 	{
 		// printk("Radio periodic tones end\n");
-		radio_disable();
+		radio_start(RADIO_RX, false);
 		periodic_tones_txing = false;
 		nrfx_timer_compare(&timer, NRF_TIMER_CC_CHANNEL0, nrfx_timer_us_to_ticks(&timer, 200 - radio_ramp_us), true);
 	}
 	else
 	{
 		// printk("Radio periodic tones start\n");
-		radio_start(false, false);
+		radio_start(RADIO_TX, false);
 		nrfx_timer_compare(&timer, NRF_TIMER_CC_CHANNEL0, nrfx_timer_us_to_ticks(&timer, 200 + radio_ramp_us), true);
 		periodic_tones_txing = true;
 	}
