@@ -328,6 +328,7 @@ static void extract_pcts(cs_de_report_t *p_report, uint8_t channel_index,
 			    BT_HCI_LE_CS_TONE_QUALITY_HIGH ||
 		    remote_tone_info[tone_index].quality_indicator !=
 			    BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
+			LOG_WRN("channel %2d local tqi[%u]: %d peer tqi[%u]: %d", channel_index, tone_index, local_tone_info[tone_index].quality_indicator, tone_index, remote_tone_info[tone_index].quality_indicator);
 			return;
 		}
 
