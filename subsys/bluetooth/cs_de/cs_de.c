@@ -140,10 +140,10 @@ static bool process_ranging_header(struct ras_ranging_header *ranging_header, vo
 {
 	cs_de_report_t *p_report = (cs_de_report_t *)user_data;
 
-	p_report->n_ap = ((ranging_header->antenna_paths_mask & BIT(0)) +
-			  ((ranging_header->antenna_paths_mask & BIT(1)) >> 1) +
-			  ((ranging_header->antenna_paths_mask & BIT(2)) >> 2) +
-			  ((ranging_header->antenna_paths_mask & BIT(3)) >> 3));
+	p_report->n_ap = MAX(1, ((ranging_header->antenna_paths_mask & BIT(0)) +
+				 ((ranging_header->antenna_paths_mask & BIT(1)) >> 1) +
+				 ((ranging_header->antenna_paths_mask & BIT(2)) >> 2) +
+				 ((ranging_header->antenna_paths_mask & BIT(3)) >> 3)));
 	return true;
 }
 
@@ -253,6 +253,11 @@ cs_de_quality_t cs_de_calc(cs_de_report_t *p_report)
 
 	float rtt_distance_m = cs_de_rtt(p_report->rtt_accumulated_half_ns, p_report->rtt_count);
 
+	if (isfinite(rtt_distance_m)) {
+		estimation_quality = CS_DE_QUALITY_OK;
+		p_report->distance_estimates[0].rtt = rtt_distance_m;
+	}
+
 	for (uint8_t ap = 0; ap < p_report->n_ap; ap++) {
 
 		if (p_report->tone_quality[ap] == CS_DE_TONE_QUALITY_BAD) {
@@ -267,8 +272,6 @@ cs_de_quality_t cs_de_calc(cs_de_report_t *p_report)
 		p_report->distance_estimates[ap].phase_slope = cs_de_phase_slope(m_iq_scratch_mem);
 
 		p_report->distance_estimates[ap].ifft = cs_de_ifft(m_iq_scratch_mem);
-
-		p_report->distance_estimates[ap].rtt = rtt_distance_m;
 
 		if (set_best_estimate(&p_report->distance_estimates[ap]) == CS_DE_QUALITY_OK) {
 			estimation_quality = CS_DE_QUALITY_OK;
