@@ -75,37 +75,58 @@ After programming the sample to your development kit, you can test it by connect
 
       I: Starting Channel Sounding Initiator Sample
       I: SoftDevice Controller build revision:
-      I: bd 8a c7 d2 9b 7c 24 05 |.....|$.
-      I: d3 20 24 a2 60 b9 62 44 |. $.`.bD
-      I: 1a dc cc 22             |..."
+      I: b1 fd 5a 42 73 7d b0 bc |..ZBs}..
+      I: a1 7f 2d 26 b9 ae a1 0e |..-&....
+      I: 3f 55 c2 d7             |?U..
       I: HW Platform: Nordic Semiconductor (0x0002)
       I: HW Variant: nRF54Lx (0x0005)
-      I: Firmware: Standard Bluetooth controller (0x00) Version 189.51082 Build 612146130
-      I: Identity: XX:XX:XX:XX:XX:XX (random)
-      I: HCI: version 6.0 (0x0e) revision 0x30d5, manufacturer 0x0059
-      I: LMP: version 6.0 (0x0e) subver 0x30d5
-      I: Filters matched. Address: XX:XX:XX:XX:XX:XX (random) connectable: 1
+      I: Firmware: Standard Bluetooth controller (0x00) Version 177.23293 Build 2961011522
+      I: HCI transport: SDC
+      I: Identity: F4:C7:E9:A5:BB:FA (random)
+      I: HCI: version 6.2 (0x10) revision 0x3070, manufacturer 0x0059
+      I: LMP: version 6.2 (0x10) subver 0x3070
+      I: Filters matched. Address: D3:EC:F3:02:52:D2 (random) connectable: 1
       I: Connecting
-      I: Connected to XX:XX:XX:XX:XX:XX (random) (err 0x00)
-      I: Security changed: XX:XX:XX:XX:XX:XX (random) level 2
+      I: Connected to D3:EC:F3:02:52:D2 (random) (err 0x00)
+      I: Security changed: D3:EC:F3:02:52:D2 (random) level 2
       I: MTU exchange success (498)
       I: The discovery procedure succeeded
+      I: Read RAS feature bits: 0x1
       I: CS capability exchange completed.
-      I: CS config creation complete. ID: 0
+      I: CS config creation complete.
+      - id: 0
+      - mode: Step mode 2 (PBR) with submode 1 (RTT)
+      - min_main_mode_steps: 2
+      - max_main_mode_steps: 5
+      - main_mode_repetition: 0
+      - mode_0_steps: 3
+      - role: Initiator
+      - rtt_type: AA only
+      - cs_sync_phy: LE 1M PHY
+      - channel_map_repetition: 1
+      - channel_selection_type: Algorithm #3b
+      - ch3c_shape: Hat shape
+      - ch3c_jump: 2
+      - t_ip1_time_us: 30
+      - t_ip2_time_us: 20
+      - t_fcs_time_us: 60
+      - t_pm_time_us: 10
+      - channel_map: 0x1FFFFFFFFFFFFC7FFFFC
+
       I: CS security enabled.
       I: CS procedures enabled:
-       - config ID: 0
-       - antenna configuration index: 0
-       - TX power: 0 dbm
-       - subevent length: 28198 us
-       - subevents per event: 1
-       - subevent interval: 0
-       - event interval: 2
-       - procedure interval: 10
-       - procedure count: 0
-       - maximum procedure length: 1000
-      I: Distance estimates on antenna path 0: ifft: 1.039173, phase_slope: 1.581897, rtt: 3.075647
-      I: Sleeping for a few seconds...
+      - config ID: 0
+      - antenna configuration index: 0
+      - TX power: 0 dbm
+      - subevent length: 16000 us
+      - subevents per event: 1
+      - subevent interval: 0
+      - event interval: 2
+      - procedure interval: 5
+      - procedure count: 0
+      - maximum procedure length: 128
+      I: Latest distance estimates on antenna path 0: ifft: 2.19, phase_slope: 3.04, rtt: 0.28 meters
+      I: Latest distance estimates on antenna path 0: ifft: 2.19, phase_slope: 2.88, rtt: 0.33 meters
 
 Dependencies
 ************

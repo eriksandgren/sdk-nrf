@@ -425,8 +425,10 @@ static void config_create_cb(struct bt_conn *conn, uint8_t status,
 	if (status == BT_HCI_ERR_SUCCESS) {
 		cs_config = *config;
 
-		const char *mode_str[5] = {"Unused", "1 (RTT)", "2 (PBR)", "3 (RTT + PBR)",
-					   "Invalid"};
+		const char *mode_str[5] = {"Step mode 1 (RTT)", "Step mode 2 (PBR)",
+			                         "Step mode 3 (RTT + PBR)",
+			                         "Step mode 2 (PBR) with submode 1 (RTT)",
+															 "Invalid"};
 		const char *role_str[3] = {"Initiator", "Reflector", "Invalid"};
 		const char *rtt_type_str[8] = {
 			"AA only",	 "32-bit sounding", "96-bit sounding", "32-bit random",
@@ -435,7 +437,25 @@ static void config_create_cb(struct bt_conn *conn, uint8_t status,
 		const char *chsel_type_str[3] = {"Algorithm #3b", "Algorithm #3c", "Invalid"};
 		const char *ch3c_shape_str[3] = {"Hat shape", "X shape", "Invalid"};
 
-		uint8_t mode_idx = config->mode > 0 && config->mode < 4 ? config->mode : 4;
+		uint8_t mode_idx;
+		switch (config->mode) {
+			case BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE:
+				mode_idx = 0;
+				break;
+			case BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE:
+				mode_idx = 1;
+				break;
+			case BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE:
+				mode_idx = 2;
+				break;
+			case BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1:
+				mode_idx = 3;
+				break;
+			default:
+				mode_idx = 4;
+				break;
+		}
+
 		uint8_t role_idx = MIN(config->role, 2);
 		uint8_t rtt_type_idx = MIN(config->rtt_type, 7);
 		uint8_t phy_idx = config->cs_sync_phy > 0 && config->cs_sync_phy < 4
