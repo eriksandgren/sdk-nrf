@@ -31,6 +31,32 @@ User interface
 The sample does not require user input and will scan for a device advertising with the GATT Ranging Service UUID.
 The first LED on the development kit will be lit when a connection has been established.
 
+Configuration
+*************
+
+|config|
+
+Configuration options
+=====================
+
+The following Kconfig options are specific to the Channel Sounding RAS Initiator sample:
+
+.. _RAS_INITIATOR_STEP_MODE:
+
+RAS_INITIATOR_STEP_MODE
+   This option selects the Channel Sounding step modes to be used in the RAS initiator sample.
+   Depending on the selected option, the sample will estimate the distance using Phase Based
+   Ranging (PBR) and or Round Trip Time (RTT).
+   The available options are:
+   -:kconfig:option:`CONFIG_RAS_INITIATOR_STEP_MODE_2_SUB_MODE_1` Main: 2, Sub: 1
+     Mode 2 steps are used for PBR and mode 1 steps are used for RTT. This is the default option.
+   -:kconfig:option:`CONFIG_RAS_INITIATOR_STEP_MODE_1` Main: 1, Sub: unused
+     Mode 1 steps are used for RTT.
+   -:kconfig:option:`CONFIG_RAS_INITIATOR_STEP_MODE_2` Main: 2, Sub: unused
+     Mode 2 steps are used for PBR.
+   -:kconfig:option:`CONFIG_RAS_INITIATOR_STEP_MODE_3` Main: 3, Sub: unused
+     Mode 3 steps are used for PBR and RTT.
+
 Building and running
 ********************
 .. |sample path| replace:: :file:`samples/bluetooth/channel_sounding/ras_initiator`
