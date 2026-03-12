@@ -100,6 +100,10 @@ static uint8_t tx_packet[RADIO_MAX_PAYLOAD_LEN];
 static uint8_t rx_packet[RADIO_MAX_PAYLOAD_LEN];
 /* Number of transmitted packets. */
 static uint32_t tx_packet_cnt;
+
+/* Number of packets to transmit. Set to zero for continuous TX.*/
+static uint32_t tx_packets_num;
+
 /* Number of received packets with valid CRC. */
 static uint32_t rx_packet_cnt;
 
@@ -873,9 +877,16 @@ static void radio_unmodulated_tx_carrier(uint8_t mode, int8_t txpower, uint8_t c
 	radio_start(false, sweep_processing);
 }
 
+uint32_t get_tx_num_packets(void)
+{
+	return tx_packet_cnt;
+}
+
 static void radio_modulated_tx_carrier(uint8_t mode, int8_t txpower, uint8_t channel,
 				       enum transmit_pattern pattern, uint32_t packets_num)
 {
+	tx_packets_num = packets_num;
+
 	radio_disable();
 	generate_modulated_rf_packet(mode, pattern);
 
@@ -941,7 +952,9 @@ static void radio_rx(uint8_t mode, uint8_t channel, enum transmit_pattern patter
 
 	nrf_radio_shorts_enable(NRF_RADIO,
 				NRF_RADIO_SHORT_READY_START_MASK |
-				NRF_RADIO_SHORT_END_START_MASK);
+				RADIO_TEST_SHORT_END_DISABLE_MASK |
+				NRF_RADIO_SHORT_DISABLED_RXEN_MASK);
+
 	nrf_radio_packetptr_set(NRF_RADIO, rx_packet);
 
 	radio_config(mode, pattern);
@@ -996,8 +1009,11 @@ static void radio_sweep_start(uint8_t channel, uint32_t delay_ms)
 static void radio_modulated_tx_carrier_duty_cycle(uint8_t mode, int8_t txpower,
 						  uint8_t channel,
 						  enum transmit_pattern pattern,
-						  uint32_t duty_cycle)
+						  uint32_t duty_cycle,
+						  uint32_t packets_num)
 {
+	tx_packets_num = packets_num;
+
 	/* Lookup table with time per byte in each radio MODE
 	 * Mapped per NRF_RADIO->MODE available on nRF5-series devices
 	 */
@@ -1097,7 +1113,8 @@ void radio_test_start(const struct radio_test_config *config)
 			config->params.modulated_tx_duty_cycle.txpower,
 			config->params.modulated_tx_duty_cycle.channel,
 			config->params.modulated_tx_duty_cycle.pattern,
-			config->params.modulated_tx_duty_cycle.duty_cycle);
+			config->params.modulated_tx_duty_cycle.duty_cycle,
+			config->params.modulated_tx_duty_cycle.packets_num);
 		break;
 	}
 
@@ -1254,14 +1271,19 @@ static void timer_init(const struct radio_test_config *config)
 void on_radio_end(const struct radio_test_config *config)
 {
 	tx_packet_cnt++;
-	if (tx_packet_cnt == config->params.modulated_tx.packets_num &&
-	    config->type == MODULATED_TX) {
+	if (tx_packet_cnt == tx_packets_num &&
+	    (config->type == MODULATED_TX || config->type == MODULATED_TX_DUTY_CYCLE)) {
 		radio_disable();
+		tx_packet_cnt = 0;
 		/* Send off signal for nRF54H20 errata HMPAN-216 */
 		if (errata_216_off()) {
 			printk("Failed to send errata HMPAN-216 off\n");
 		}
-		config->params.modulated_tx.cb();
+		if (config->type == MODULATED_TX_DUTY_CYCLE) {
+			config->params.modulated_tx_duty_cycle.cb();
+		} else {
+			config->params.modulated_tx.cb();
+		}
 	} else if (cancel_request) {
 		cancel();
 	} else if (config->type == MODULATED_TX) {
