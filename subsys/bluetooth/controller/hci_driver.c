@@ -1320,9 +1320,11 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv_func)
 
 	err = sdc_enable(hci_driver_receive_process, sdc_mempool);
 	if (err) {
+		LOG_ERR("Failed to enable SoftDevice Controller: %d", err);
 		MULTITHREADING_LOCK_RELEASE();
 		return err;
 	}
+	LOG_INF("SoftDevice Controller enabled");
 
 #if defined(CONFIG_BT_PER_ADV)
 	sdc_hci_cmd_vs_periodic_adv_event_length_set_t per_adv_length_params = {
@@ -1344,8 +1346,10 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv_func)
 	err = sdc_hci_cmd_vs_cs_params_set(&cs_params_set_event_length);
 	if (err) {
 		MULTITHREADING_LOCK_RELEASE();
+		LOG_ERR("Failed to set CS event length: %d", err);
 		return -ENOTSUP;
 	}
+	LOG_INF("CS event length set");
 #endif /* CONFIG_BT_CTLR_CHANNEL_SOUNDING */
 
 #if defined(CONFIG_BT_CTLR_CHANNEL_SOUNDING)
@@ -1359,19 +1363,22 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv_func)
 		MULTITHREADING_LOCK_RELEASE();
 		return -ENOTSUP;
 	}
+	LOG_INF("CS T_PM length set");
 #endif /* CONFIG_BT_CTLR_CHANNEL_SOUNDING */
 
 #if defined(CONFIG_BT_CTLR_CHANNEL_SOUNDING)
-	sdc_hci_cmd_vs_cs_params_set_t cs_params_set_board_distance_offset = {
-		.cs_param_type = SDC_HCI_VS_CS_PARAM_TYPE_CS_BOARD_DISTANCE_OFFSET_SET,
-		.cs_param_data.cs_board_distance_offset_params.cs_board_distance_offset_cm =
-			CONFIG_BT_CTLR_SDC_CS_BOARD_DISTANCE_OFFSET,
-	};
-	err = sdc_hci_cmd_vs_cs_params_set(&cs_params_set_board_distance_offset);
-	if (err) {
-		MULTITHREADING_LOCK_RELEASE();
-		return -ENOTSUP;
-	}
+	// sdc_hci_cmd_vs_cs_params_set_t cs_params_set_board_distance_offset = {
+	// 	.cs_param_type = SDC_HCI_VS_CS_PARAM_TYPE_CS_BOARD_DISTANCE_OFFSET_SET,
+	// 	.cs_param_data.cs_board_distance_offset_params.cs_board_distance_offset_cm =
+	// 		CONFIG_BT_CTLR_SDC_CS_BOARD_DISTANCE_OFFSET,
+	// };
+	// err = sdc_hci_cmd_vs_cs_params_set(&cs_params_set_board_distance_offset);
+	// if (err) {
+	// 	MULTITHREADING_LOCK_RELEASE();
+	// 	LOG_ERR("Failed to set CS board distance offset: %d", err);
+	// 	return -ENOTSUP;
+	// }
+	// LOG_INF("CS board distance offset set");
 #endif /* CONFIG_BT_CTLR_CHANNEL_SOUNDING */
 
 #if defined(CONFIG_BT_CTLR_SDC_BIG_RESERVED_TIME_US)
