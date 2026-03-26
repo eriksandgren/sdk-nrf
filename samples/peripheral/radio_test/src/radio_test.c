@@ -33,9 +33,14 @@
 #endif /* NRF54H_ERRATA_216_PRESENT */
 
 #if CONFIG_RADIO_TEST_PIN_DEBUG
+#include <zephyr/drivers/gpio.h>
+
+#define READY_DISABLED_PIN_PSEL NRF_DT_GPIOS_TO_PSEL(DT_NODELABEL(ready_disabled_pin), gpios)
+#define ADDRESS_END_PIN_PSEL NRF_DT_GPIOS_TO_PSEL(DT_NODELABEL(address_end_pin), gpios)
+#define GPIOTE_NODE NRF_DT_GPIOTE_NODE(DT_NODELABEL(ready_disabled_pin), gpios)
+
 #include <nrfx_gpiote.h>
 #include <gpiote_nrfx.h>
-#define GPIOTE_NODE DT_NODELABEL(gpiote20)
 #endif /* CONFIG_RADIO_TEST_PIN_DEBUG */
 
 /* IEEE 802.15.4 default frequency. */
@@ -1306,13 +1311,13 @@ static int pin_debug_ppi_config(nrfx_gpiote_t *gpiote)
 	nrfx_gppi_handle_t handle[4];
 
 	tep[0] = nrfx_gpiote_set_task_address_get(
-		gpiote, CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_READY_AND_DISABLED_PIN);
+		gpiote, READY_DISABLED_PIN_PSEL);
 	tep[1] = nrfx_gpiote_clr_task_address_get(
-		gpiote, CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_READY_AND_DISABLED_PIN);
+		gpiote, READY_DISABLED_PIN_PSEL);
 	tep[2] = nrfx_gpiote_set_task_address_get(
-		gpiote, CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_ADDRESS_AND_END_PIN);
+		gpiote, ADDRESS_END_PIN_PSEL);
 	tep[3] = nrfx_gpiote_clr_task_address_get(
-		gpiote, CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_ADDRESS_AND_END_PIN);
+		gpiote, ADDRESS_END_PIN_PSEL);
 
 	eep[0] = nrf_radio_event_address_get(NRF_RADIO, NRF_RADIO_EVENT_READY);
 	eep[1] = nrf_radio_event_address_get(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
@@ -1356,7 +1361,7 @@ static int pin_debug_gpiote_config(nrfx_gpiote_t *gpiote)
 	};
 
 	if (nrfx_gpiote_output_configure(gpiote,
-					 CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_READY_AND_DISABLED_PIN,
+					 READY_DISABLED_PIN_PSEL,
 					 &gpiote_output_cfg, &task_cfg_ready_disabled) != 0) {
 		printk("Failed configuring GPIOTE chan\n");
 		return -ENOMEM;
@@ -1369,15 +1374,15 @@ static int pin_debug_gpiote_config(nrfx_gpiote_t *gpiote)
 	};
 
 	if (nrfx_gpiote_output_configure(gpiote,
-					 CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_ADDRESS_AND_END_PIN,
+					 ADDRESS_END_PIN_PSEL,
 					 &gpiote_output_cfg, &task_cfg_address_end) != 0) {
 		printk("Failed configuring GPIOTE chan\n");
 		return -ENOMEM;
 	}
 
 	nrfx_gpiote_out_task_enable(gpiote,
-				    CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_READY_AND_DISABLED_PIN);
-	nrfx_gpiote_out_task_enable(gpiote, CONFIG_RADIO_TEST_PIN_DEBUG_RADIO_ADDRESS_AND_END_PIN);
+				    READY_DISABLED_PIN_PSEL);
+	nrfx_gpiote_out_task_enable(gpiote, ADDRESS_END_PIN_PSEL);
 
 	return 0;
 }

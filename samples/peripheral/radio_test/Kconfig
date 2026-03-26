@@ -41,27 +41,4 @@ config RADIO_TEST_PIN_DEBUG
 	  This can be useful for debugging to determine when the radio is being used.
 	  This feature is currently only supported and tested on nRF54L Series devices.
 
-
-if RADIO_TEST_PIN_DEBUG
-
-config RADIO_TEST_PIN_DEBUG_RADIO_READY_AND_DISABLED_PIN
-	int "Pin toggled upon the events RADIO->EVENTS_READY and RADIO->EVENTS_DISABLED"
-	depends on RADIO_TEST_PIN_DEBUG
-	default 43 if SOC_COMPATIBLE_NRF54LX
-	help
-	  Sets the pin number that is set when RADIO->EVENTS_READY triggers and cleared when RADIO->EVENTS_DISABLED triggers, if CONFIG_RADIO_TEST_PIN_DEBUG is enabled.
-	  For nRF54L only PORT1 can be used and the default pin number
-	  is 43 - 32 = 11.
-
-config RADIO_TEST_PIN_DEBUG_RADIO_ADDRESS_AND_END_PIN
-	int "Pin toggled upon the events RADIO->EVENTS_ADDRESS and RADIO->EVENTS_END"
-	depends on RADIO_TEST_PIN_DEBUG
-	default 44 if SOC_COMPATIBLE_NRF54LX
-	help
-	  Sets the pin number that is set when RADIO->EVENTS_ADDRESS triggers and cleared when RADIO->EVENTS_END triggers, if CONFIG_RADIO_TEST_PIN_DEBUG is enabled.
-	  For nRF54L only PORT1 can be used and the default pin number
-	  is 44 - 32 = 12.
-
-endif
-
 source "Kconfig.zephyr"
