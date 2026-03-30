@@ -243,14 +243,8 @@ static int cmd_tx_carrier_start(const struct shell *shell, size_t argc,
 
 static void tx_modulated_carrier_end(void)
 {
-	printk("\nThe modulated TX has finished\n");
+	printk("The modulated TX has finished\n");
 }
-
-static void tx_modulated_carrier_duty_cycle_end(void)
-{
-	printk("\nThe modulated TX duty cycle has finished\n");
-}
-
 
 static void rx_end(void)
 {
@@ -326,26 +320,18 @@ static int cmd_duty_cycle_set(const struct shell *shell, size_t argc,
 			      char **argv)
 {
 	uint32_t duty_cycle;
-	uint32_t packets_num;
 
 	if (argc == 1) {
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	if (argc > 3) {
+	if (argc > 2) {
 		shell_error(shell, "%s: bad parameters count.", argv[0]);
 		return -EINVAL;
 	}
 
 	duty_cycle = atoi(argv[1]);
-
-	if (argc == 3) {
-		packets_num = atoi(argv[2]);
-	}
-	else {
-		packets_num = 0;
-	}
 
 	if (duty_cycle > 90) {
 		shell_error(shell, "Duty cycle must be between 1 and 90.");
@@ -367,8 +353,6 @@ static int cmd_duty_cycle_set(const struct shell *shell, size_t argc,
 		config.channel_start;
 	test_config.params.modulated_tx_duty_cycle.duty_cycle =
 		config.duty_cycle;
-	test_config.params.modulated_tx_duty_cycle.packets_num = packets_num;
-	test_config.params.modulated_tx_duty_cycle.cb = tx_modulated_carrier_duty_cycle_end;
 #if CONFIG_FEM
 	test_config.fem = config.fem;
 #endif /* CONFIG_FEM */
@@ -1176,13 +1160,6 @@ static int cmd_print_payload(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_print_tx_num_packets(const struct shell *shell, size_t argc,
-	char **argv) {
-	shell_print(shell, "Number of packets: %d", get_tx_num_packets());
-
-	return 0;
-}
-
 #if CONFIG_FEM
 static int cmd_fem(const struct shell *shell, size_t argc, char **argv)
 {
@@ -1495,7 +1472,6 @@ SHELL_CMD_REGISTER(start_rx_sweep, NULL, "Start RX sweep", cmd_rx_sweep_start);
 SHELL_CMD_REGISTER(start_tx_sweep, NULL, "Start TX sweep", cmd_tx_sweep_start);
 SHELL_CMD_REGISTER(start_rx, NULL, "Start RX", cmd_rx_start);
 SHELL_CMD_REGISTER(print_rx, NULL, "Print RX payload", cmd_print_payload);
-SHELL_CMD_REGISTER(print_tx, NULL, "Print TX num packets", cmd_print_tx_num_packets);
 #if defined(TOGGLE_DCDC_HELP)
 SHELL_CMD_REGISTER(toggle_dcdc_state, NULL, TOGGLE_DCDC_HELP, cmd_toggle_dc);
 #endif

@@ -172,15 +172,6 @@ struct radio_test_config {
 
 			/** Duty cycle. */
 			uint32_t duty_cycle;
-
-			/**
-			 * Number of packets to be received.
-			 * Set to zero for continuous RX.
-			 */
-			 uint32_t packets_num;
-
-			/** Callback to indicate that TX duty cycle is finished. */
-			void (*cb)(void);
 		} modulated_tx_duty_cycle;
 	} params;
 
@@ -243,6 +234,4 @@ void radio_rx_stats_get(struct radio_rx_stats *rx_stats);
  */
 void toggle_dcdc_state(uint8_t dcdc_state);
 
-
-uint32_t get_tx_num_packets(void);
 #endif /* RADIO_TEST_H_ */
