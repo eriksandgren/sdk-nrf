@@ -217,6 +217,29 @@ static void errata_216_release(void)
 	nrf_timer_int_disable(timer.p_reg, ~0);
 }
 
+static void busy_wait_for_timer(uint32_t us)
+{
+	nrfx_timer_disable(&timer);
+	nrf_timer_shorts_disable(timer.p_reg, ~0);
+	nrf_timer_int_disable(timer.p_reg, ~0);
+
+	nrfx_timer_compare(&timer,
+		NRF_TIMER_CC_CHANNEL4,
+		nrfx_timer_us_to_ticks(&timer, us),
+		false);
+	nrfx_timer_enable(&timer);
+
+	while (nrf_timer_event_check(timer.p_reg, NRF_TIMER_EVENT_COMPARE4) == 0) {
+		/* Do nothing */
+	}
+
+	nrfx_timer_disable(&timer);
+	nrf_timer_shorts_disable(timer.p_reg, ~0);
+	nrf_timer_int_disable(timer.p_reg, ~0);
+	nrfx_timer_clear(&timer);
+}
+
+
 #if CONFIG_FEM
 static struct radio_test_fem fem;
 #endif /* CONFIG_FEM */
@@ -1282,6 +1305,7 @@ void on_radio_end(const struct radio_test_config *config)
 				/* Do nothing */
 			}
 			nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+			busy_wait_for_timer(30);
 			nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
 		} else {
 			nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_START);
