@@ -1150,7 +1150,7 @@ static void radio_tx_power_set(uint8_t channel, int8_t tx_power, nrf_radio_mode_
 	nrf_vreqctrl_radio_high_voltage_set(NRF_VREQCTRL, high_voltage_enable);
 #endif /* NRF53_SERIES */
 
-	nrf_radio_txpower_set(NRF_RADIO, dbm_to_nrf_radio_txpower(radio_power));
+	nrf_radio_txpower_set(NRF_RADIO, RADIO_TXPOWER_TXPOWER_Neg28dBm);
 }
 
 static void radio_reset(void)
@@ -2589,6 +2589,7 @@ static struct dtm_pdu *radio_buffer_swap(void)
 static void on_radio_end_event(void)
 {
 	if (dtm_inst.state != STATE_RECEIVER_TEST) {
+		dtm_inst.rx_pkt_count++;
 		return;
 	}
 
@@ -2627,6 +2628,7 @@ static void on_radio_end_event(void)
 		dtm_inst.rx_pkt_count++;
 	}
 
+
 	/* Note that failing packets are simply ignored (CRC or
 	 * contents error).
 	 */
@@ -2639,6 +2641,8 @@ static void radio_handler(const void *context)
 {
 	if (nrf_radio_event_check(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS)) {
 		nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS);
+
+		// dtm_inst.rx_pkt_count++;
 #if NRF52_ERRATA_172_PRESENT
 		if (dtm_inst.state == STATE_RECEIVER_TEST &&
 		    dtm_inst.anomaly_172_wa_enabled) {

@@ -44,6 +44,7 @@ config DTM_USB
 
 config DTM_TRANSPORT_HCI
 	bool "DTM over HCI UART [EXPERIMENTAL]"
+	default	y
 	depends on SERIAL
 	depends on NET_BUF
 	select EXPERIMENTAL

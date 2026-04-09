@@ -248,6 +248,8 @@ static int test_end_cc_evt(uint8_t status, uint16_t cnt)
 
 	tmp.ret.status = status;
 	sys_put_le16(cnt, (uint8_t *)&tmp.ret.rx_pkt_count);
+	// sys_put_le16(BT_HCI_OP_LE_TEST_END, (uint8_t *)&tmp.evt.opcode);
+
 
 	LOG_INF("Responding to test end, with status %d and count %d", status, cnt);
 	return hci_uart_write(H4_TYPE_EVT, (uint8_t *)&hdr, sizeof(hdr), (uint8_t *)&tmp, hdr.len);
