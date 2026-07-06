@@ -978,7 +978,7 @@ int main(void)
 	/* scale factor of conn_interval units to proc_interval units is 1.25/0.625 = 2 */
 	const uint16_t acl_interval_in_proc_interval_units =
 		scan_params.conn_param->interval_max * 2;
-	uint16_t desired_procedure_interval = realtime_rd ? 5 : 10;
+	uint16_t desired_procedure_interval = realtime_rd ? 50 : 100;
 	uint16_t desired_max_procedure_length =
 		acl_interval_in_proc_interval_units * (desired_procedure_interval - 1);
 

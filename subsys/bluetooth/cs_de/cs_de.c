@@ -34,6 +34,17 @@ LOG_MODULE_REGISTER(cs_de, CONFIG_BT_CS_DE_LOG_LEVEL);
 
 static float m_iq_scratch_mem[2 * CONFIG_BT_CS_DE_NFFT_SIZE];
 
+static void log_ifft_mag(const float ifft_mag[CONFIG_BT_CS_DE_NFFT_SIZE])
+{
+	LOG_DBG("IFFT_MAG_BEGIN,%u", CONFIG_BT_CS_DE_NFFT_SIZE);
+
+	for (uint32_t i = 0; i < CONFIG_BT_CS_DE_NFFT_SIZE; i++) {
+		LOG_DBG("%.3f,",(double)ifft_mag[i]);
+	}
+
+	LOG_DBG("IFFT_MAG_END");
+}
+
 static cs_de_quality_t set_best_estimate(cs_de_dist_estimates_t *p_estimates_public)
 {
 	cs_de_quality_t data_quality = CS_DE_QUALITY_OK;
@@ -60,10 +71,17 @@ void cs_de_combined_iq_calculate(cs_de_iq_tones_t *cs_de_iq_tones,
 	float *i_remote = cs_de_iq_tones->i_remote;
 	float *q_remote = cs_de_iq_tones->q_remote;
 
+	LOG_DBG("COMB_IQ_BEGIN,%u", CS_DE_NUM_CHANNELS);
+
 	for (uint32_t n = 0; n < CS_DE_NUM_CHANNELS; n++) {
 		iq_tones_comb[2 * n] = i_local[n] * i_remote[n] - q_local[n] * q_remote[n];
 		iq_tones_comb[2 * n + 1] = i_local[n] * q_remote[n] + i_remote[n] * q_local[n];
+
+		LOG_DBG("COMB_IQ,%u,%.6f,%.6f", n, (double)iq_tones_comb[2 * n],
+			(double)iq_tones_comb[2 * n + 1]);
 	}
+
+	LOG_DBG("COMB_IQ_END");
 }
 
 cs_de_quality_t cs_de_calc(cs_de_report_t *p_report)
@@ -150,16 +168,49 @@ static float calculate_ifft_peak_index_to_distance(int32_t peak_index,
 								     : ifft_mag[0];
 	/* Avoid interpolation of early, prompt and late if left null compensation has taken place.
 	 */
-	float t_hat = (prompt >= early && prompt >= late)
-			      ? (late - early) / (4 * prompt - 2 * (early + late))
-			      : 0.0f;
+	bool interpolate = (prompt >= early && prompt >= late);
+	float t_hat = 0.0f;
+
+	if (interpolate) {
+		float denom = 4 * prompt - 2 * (early + late);
+
+		t_hat = (late - early) / denom;
+		if (!isfinite(t_hat)) {
+			LOG_WRN("IFFT NaN: interpolation failed (peak=%d denom=%.6f "
+				"prompt=%.4f early=%.4f late=%.4f)",
+				peak_index, (double)denom, (double)prompt, (double)early,
+				(double)late);
+			return NAN;
+		}
+	}
 
 	float distance = ((peak_index + t_hat) * SPEED_OF_LIGHT_M_PER_S) /
 			 (2.0f * CONFIG_BT_CS_DE_NFFT_SIZE * CHANNEL_SPACING_HZ);
 
-	if (peak_index >= (CONFIG_BT_CS_DE_NFFT_SIZE - 2) || distance < 0.0f) {
-		distance = NAN;
+	if (peak_index >= (CONFIG_BT_CS_DE_NFFT_SIZE - 2)) {
+		LOG_WRN("IFFT NaN: peak index too high (peak=%d limit=%d "
+			"raw_distance=%.3fm t_hat=%.4f prompt=%.4f early=%.4f late=%.4f)",
+			peak_index, CONFIG_BT_CS_DE_NFFT_SIZE - 2, (double)distance,
+			(double)t_hat, (double)prompt, (double)early, (double)late);
+		return NAN;
 	}
+
+	if (distance < 0.0f) {
+		LOG_WRN("IFFT NaN: negative distance (peak=%d t_hat=%.4f distance=%.3fm "
+			"interpolate=%d prompt=%.4f early=%.4f late=%.4f)",
+			peak_index, (double)t_hat, (double)distance, interpolate,
+			(double)prompt, (double)early, (double)late);
+		return NAN;
+	}
+
+	if (!isfinite(distance)) {
+		LOG_WRN("IFFT NaN: non-finite distance (peak=%d t_hat=%.4f "
+			"interpolate=%d prompt=%.4f early=%.4f late=%.4f)",
+			peak_index, (double)t_hat, interpolate, (double)prompt,
+			(double)early, (double)late);
+		return NAN;
+	}
+
 	return distance;
 }
 
@@ -298,9 +349,25 @@ static uint32_t find_ifft_peak_index(float ifft_mag[2 * CONFIG_BT_CS_DE_NFFT_SIZ
 
 	uint32_t compensated_peak_index = shortest_path_idx;
 
+	if (short_path_found && shortest_path_idx != ifft_mag_max_index) {
+		LOG_DBG("IFFT peak: short-path index %u chosen over max index %u "
+			"(mag %.4f vs %.4f)",
+			shortest_path_idx, ifft_mag_max_index, (double)ifft_mag[shortest_path_idx],
+			(double)ifft_mag_max);
+	} else {
+		LOG_DBG("IFFT peak: max index %u (mag %.4f)", ifft_mag_max_index,
+			(double)ifft_mag_max);
+	}
+
 	if (compensated_peak_index < CONFIG_BT_CS_DE_NFFT_SIZE - 2) {
+		uint32_t pre_compensation_index = compensated_peak_index;
+
 		compensated_peak_index =
 			calculate_left_null_compensation_of_peak(shortest_path_idx, ifft_mag);
+		if (compensated_peak_index != pre_compensation_index) {
+			LOG_DBG("IFFT peak: left-null compensation %u -> %u",
+				pre_compensation_index, compensated_peak_index);
+		}
 	}
 
 	return compensated_peak_index;
@@ -317,12 +384,28 @@ float cs_de_ifft(float iq_tones_comb[2 * CONFIG_BT_CS_DE_NFFT_SIZE])
 	 *     to correspond to the path with the shortest propagattion time.
 	 *  3. Convert the peak index to a distance estimate.
 	 */
+	for (uint32_t n = 0; n < CS_DE_NUM_CHANNELS * 2; n++) {
+		if (!isfinite(iq_tones_comb[n])) {
+			LOG_WRN("IFFT input has non-finite combined IQ at sample %u", n);
+			break;
+		}
+	}
+
 	calculate_ifft_mag(iq_tones_comb);
 
 	/* The input IQ values are overwritten with the IFFT magnitude. */
 	float *ifft_mag = iq_tones_comb;
 
+	log_ifft_mag(ifft_mag);
+
 	uint32_t ifft_peak_index = find_ifft_peak_index(ifft_mag);
 
-	return calculate_ifft_peak_index_to_distance(ifft_peak_index, ifft_mag);
+	float distance = calculate_ifft_peak_index_to_distance(ifft_peak_index, ifft_mag);
+
+	if (isfinite(distance)) {
+		LOG_DBG("IFFT distance OK: %.3fm (peak index %u)", (double)distance,
+			ifft_peak_index);
+	}
+
+	return distance;
 }
