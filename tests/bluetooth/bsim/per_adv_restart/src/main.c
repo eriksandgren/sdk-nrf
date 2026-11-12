@@ -41,7 +41,7 @@ static void per_adv_restart(void)
 
 	for (uint32_t i = 0U; i < CYCLES; i++) {
 		k_sleep(K_USEC(1000U + (i * 997U) % 30000U));
-
+		printk("cycle %u\n", i);
 		err = bt_le_ext_adv_start(per_adv, BT_LE_EXT_ADV_START_DEFAULT);
 		TEST_ASSERT(!err, "bt_le_ext_adv_start failed (%d)", err);
 
