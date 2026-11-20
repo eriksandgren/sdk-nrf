@@ -837,6 +837,51 @@ config BT_CTLR_SCAN_DECISION_INSTRUCTION_COUNT
 	help
 	  The number of scan decision instructions the controller will support.
 
+config BT_CTLR_SDC_UTP_HCI
+	bool "Unified Test Protocol (UTP) over HCI (HCI_LE_UTP_Send)"
+	depends on !BT_LL_SOFTDEVICE_BUILD_TYPE_LIB
+	select BT_CTLR_DTM_HCI
+	select BT_CTLR_SDC_USE_HIDDEN_SDC_FEATURES_UTP
+
+config BT_CTLR_SDC_UTP_HCI_BUFFER_SIZE
+	int "UTP over HCI buffer size (octets)"
+	depends on BT_CTLR_SDC_UTP_HCI
+	default 256
+	help
+	  Size, in octets, of each of the two (rx and tx) buffers of the UTP over HCI session.
+
+config BT_CTLR_SDC_UTP_VS_NORDIC
+	bool "Nordic vendor-specific UTP additions"
+	help
+	  Adds support for UTP_Set_Vendor_Specific_Data, UTP_Vendor_Specific_Control and
+	  UTP_Report_Vendor_Specific_Data with the Nordic company ID. Without this option, the
+	  controller rejects UTP_Set_Vendor_Specific_Data and UTP_Vendor_Specific_Control, and the
+	  vendor-specific code is not linked in.
+
+config BT_CTLR_SDC_UTP_OTA
+	bool "Unified Test Protocol (UTP) over the air (LL_OTA_UTP_IND)"
+	depends on !BT_LL_SOFTDEVICE_BUILD_TYPE_LIB
+	depends on BT_CONN
+	select BT_CTLR_DTM_HCI
+	select BT_CTLR_SDC_USE_HIDDEN_SDC_FEATURES_UTP
+
+config BT_CTLR_SDC_UTP_OTA_BUFFER_SIZE
+	int "UTP OTA buffer size (octets)"
+	depends on BT_CTLR_SDC_UTP_OTA
+	default 64 if BT_CTLR_SDC_UTP_OTA
+	default 0
+	help
+	  Size, in octets, of each of the two (rx and tx) buffers allocated per UTP OTA link.
+
+config BT_CTLR_SDC_UTP_OTA_LINK_COUNT
+	int "Number of concurrent UTP OTA links"
+	depends on BT_CTLR_SDC_UTP_OTA
+	default 1 if BT_CTLR_SDC_UTP_OTA
+	default 0
+	range 0 BT_MAX_CONN
+	help
+	  Number of connections on which UTP OTA may run concurrently.
+
 config BT_LL_SOFTDEVICE_INIT_PRIORITY
 	int
 	default 53 if MPSL_USE_EXTERNAL_CLOCK_CONTROL
